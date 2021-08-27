@@ -85,15 +85,13 @@ def upscale_image(image_path):
     print("Clone repository.")
     os.system("git clone https://github.com/IBM/max-image-resolution-enhancer.git")
 
-    pwd = "fp4muBd6qTo#"
-
     print("Build docker image.")
     subprocess.call(
-        "echo {} | sudo -S docker build -t max-image-resolution-enhancer max-image-resolution-enhancer/".format(pwd),
+        "echo {} | sudo -S docker build -t max-image-resolution-enhancer max-image-resolution-enhancer/",
         shell=True)
 
     print("Run docker image.")
-    subprocess.Popen("echo {} | sudo -S docker run -p 5000:5000 max-image-resolution-enhancer".format(pwd), shell=True,
+    subprocess.Popen("echo {} | sudo -S docker run -p 5000:5000 max-image-resolution-enhancer", shell=True,
                      stdin=None, stdout=None, stderr=None,
                      close_fds=True)  # The docker daemon must run for this command
     time.sleep(25)  # Wait till docker image is up and running.
