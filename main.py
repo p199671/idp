@@ -11,7 +11,7 @@ if __name__ == '__main__':
     parser.add_argument('--image-path', required=True, type=str,
                         help='Specify path to the directory, where the images reside that should be converted into a '
                              'video.')
-    parser.add_argument('--frame-rate', type=int,
+    parser.add_argument('--frame-rate', type=int, default = 25,
                         help='Specify the framerate (in fps) with which the video should be created out of the '
                              'images. If not given, the timestamps are used to calculate the framerate.')
     parser.add_argument('--rectify', type=str, default='False',
@@ -72,7 +72,8 @@ if __name__ == '__main__':
         print("Resize images with factor {}.".format(resize_factor))
         im.resize_image(path, factor=resize_factor)
 
-    im.upscale_image("sample_small/mono_right/")
+    if upscale:
+        im.upscale_image("sample_small/mono_right/")
 
     print("Convert images to video.")
     VC.convert_to_video(path, frame_rate=frame_rate, video_ext="mp4")
