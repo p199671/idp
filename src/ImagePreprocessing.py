@@ -24,7 +24,7 @@ def rectify_images(image_path, model_path=None):
     # Create the camera model to undistort the image correctly
     model = CameraModel(model_path, image_path)
 
-    # Create a list of the files of the directory
+    # Create a list of files of the directory
     image_list = [x for x in os.listdir(image_path) if not x.startswith('.')]
 
     for i, image_name in enumerate(image_list):
