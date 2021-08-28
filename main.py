@@ -54,9 +54,9 @@ if __name__ == '__main__':
 
     # Delete and extract the sample to get intended starting conditions.
     # This part is just for development purposes and should be deleted later.
-    os.system("rm -r sample_small")
-    os.system("mkdir sample_small")
-    os.system("tar -xvf sample_small.tar -C sample_small")
+    os.system("rm -r dataset")
+    os.system("mkdir dataset")
+    os.system("tar -xvf sample_small.tar -C dataset")
     os.system("rm ./out/*.mp4")
 
 
