@@ -47,6 +47,10 @@ def images_to_video(path, video_ext, frame_rate):
     pic_format = "{}pic%0{}d{}".format(path, digits, ext)
     vid_format = "{}.{}".format(name, video_ext)
 
+    # create output directory if it doesn't exist yet
+    if not os.path.exists('out'):
+        os.makedirs('out')
+
     # bash command to start the video convertion with ffmpeg
     os.system("ffmpeg -r {} -i {} out/{}".format(frame_rate, pic_format, vid_format))
 
