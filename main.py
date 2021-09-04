@@ -73,7 +73,7 @@ if __name__ == '__main__':
         im.resize_image(path, factor=resize_factor)
 
     if upscale:
-        im.upscale_image("sample_small/mono_right/")
+        im.upscale_image(path)
 
     print("Convert images to video.")
     VC.convert_to_video(path, frame_rate=frame_rate, video_ext="mp4")
