@@ -1,17 +1,17 @@
 from src import VideoConverter as VC
 from src import ImagePreprocessing as im
-from src import GStreamer as gst
-from threading import Thread
 import argparse
 import os
+import subprocess
 
 if __name__ == '__main__':
     ''' Start Command Line Arguments Parser '''
     parser = argparse.ArgumentParser(description="Sensor Emulator")
-    parser.add_argument('--image-path', required=True, type=str,
-                        help='Specify path to the directory, where the images reside that should be converted into a '
-                             'video.')
-    parser.add_argument('--frame-rate', type=int, default = 25,
+    parser.add_argument('--dataset-dir', required=True, type=str,
+                        help='Specify the dataset\'s root. All subdirectories containing images are found automatically'
+                             'and videos are produced for each one. It is also possible to give just one directory'
+                             'containing images.')
+    parser.add_argument('--frame-rate', type=int, default=25,
                         help='Specify the framerate (in fps) with which the video should be created out of the '
                              'images. If not given, the timestamps are used to calculate the framerate.')
     parser.add_argument('--rectify', type=str, default='False',
@@ -42,10 +42,17 @@ if __name__ == '__main__':
         args.upscale = False
     else:
         raise Exception("Wrong argument for option 'upscale'.")
-    ''' End Command Line Arguments Parser'''
+
+    # Resolve dataset directory to find subdirectories where images (*.pngs) reside
+    sub_dirs = subprocess.check_output("find {} -type f -name *.png | sed -r 's|/[^/]+$||' |sort |uniq".format(args.dataset_dir), shell=True).decode("utf-8").split("\n")[:-1]
+    for i, dirs in enumerate(sub_dirs):
+        if not dirs.endswith("/"):
+            sub_dirs[i] = dirs + "/"
+
+    ''' End Command Line Arguments Parser '''
 
     # Assign command line options to variables
-    path = args.image_path
+    image_dirs = sub_dirs
     frame_rate = args.frame_rate
     rectify = args.rectify
     resize_factor = args.resize_factor
@@ -59,21 +66,23 @@ if __name__ == '__main__':
     os.system("tar -xvf sample_small.tar -C dataset")
     os.system("rm ./out/*.mp4")
 
-
-
-    # for path in paths:
     if rectify:
         print("Rectify images.")
-        im.rectify_images(path, models_path)
+        for image_dir in image_dirs:
+            im.rectify_images(image_dir, image_dirs)
 
     # im.interpolate_images("sample_small/mono_left/pic00.png", "sample_small/mono_left/pic01.png")
 
     if resize_factor != 1:
         print("Resize images with factor {}.".format(resize_factor))
-        im.resize_image(path, factor=resize_factor)
+        for image_dir in image_dirs:
+            im.resize_image(image_dir, factor=resize_factor)
 
     if upscale:
-        im.upscale_image(path)
+        print("Upscale images.")
+        for image_dir in image_dirs:
+            im.upscale_image(image_dir)
 
     print("Convert images to video.")
-    VC.convert_to_video(path, frame_rate=frame_rate, video_ext="mp4")
+    for image_dir in image_dirs:
+        VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext="mp4")
