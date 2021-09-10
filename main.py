@@ -69,7 +69,7 @@ if __name__ == '__main__':
     if rectify:
         print("Rectify images.")
         for image_dir in image_dirs:
-            im.rectify_images(image_dir, image_dirs)
+            im.rectify_images(image_dir, models_path)
 
     # im.interpolate_images("sample_small/mono_left/pic00.png", "sample_small/mono_left/pic01.png")
 
