@@ -24,6 +24,10 @@ if __name__ == '__main__':
                         help='This options scales the images up by 4 using the max-image-resultion.'
                              'It is available under https://github.com/IBM/MAX-Image-Resolution-Enhancer.'
                              'True|False are valid arguments.')
+    parser.add_argument('--extension', type=str, default='mp4',
+                        help='This option specifies the extension of the video, which is generated.'
+                             'Valid arguments are \'mp4\', \'avi\', \'mov\', or all extensions supported by ffmpeg.'
+                             'Default \'mp4\'.')
 
     args = parser.parse_args()
 
@@ -58,6 +62,7 @@ if __name__ == '__main__':
     resize_factor = args.resize_factor
     upscale = args.upscale
     models_path = "./robotcar_dataset_sdk/models/"  # Path to models of sensors delivered with the oxford dataset
+    extension = args.extension
 
     # # Delete and extract the sample to get intended starting conditions.
     # # This part is just for development purposes and should be deleted later.
@@ -85,4 +90,4 @@ if __name__ == '__main__':
 
     print("Convert images to video.")
     for image_dir in image_dirs:
-        VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext="mp4")
+        VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext=extension)
