@@ -87,11 +87,11 @@ def upscale_image(image_path):
 
     print("Build docker image.")
     subprocess.call(
-        "echo {} | sudo -S docker build -t max-image-resolution-enhancer max-image-resolution-enhancer/",
+        "docker build -t max-image-resolution-enhancer max-image-resolution-enhancer/",
         shell=True)
 
     print("Run docker image.")
-    subprocess.Popen("echo {} | sudo -S docker run -p 5000:5000 max-image-resolution-enhancer", shell=True,
+    subprocess.Popen("docker run -p 5000:5000 max-image-resolution-enhancer", shell=True,
                      stdin=None, stdout=None, stderr=None,
                      close_fds=True)  # The docker daemon must run for this command
     time.sleep(25)  # Wait till docker image is up and running.
@@ -105,5 +105,5 @@ def upscale_image(image_path):
             image_path + image_name, image_path + image_name), shell=True)
 
     print("Terminate docker container.")
-    subprocess.Popen("sudo docker stop $(sudo docker ps | grep max-image-resolution-enhancer | awk '{ print $1 }')",
+    subprocess.Popen("docker stop $(docker ps | grep max-image-resolution-enhancer | awk '{print $1}')",
                      shell=True)
