@@ -1,12 +1,23 @@
+import os
+import sys
+
+import numpy as np
+
 from src import VideoConverter as VC
 from src import ImagePreprocessing as im
 import argparse
-import os
 import subprocess
+from src.LiDAR import load_velodyne_raw, create_velodyne_payload
+from scapy.layers.inet import Ether, IP, UDP
+from scapy.utils import wrpcap
+from tqdm import tqdm
 
 if __name__ == '__main__':
     ''' Start Command Line Arguments Parser '''
     parser = argparse.ArgumentParser(description="Sensor Emulator")
+    parser.add_argument('--sensor', required=True, type=str, choices=['camera', 'lidar'],
+                        help='Specify the sensor, which should be emulated.'
+                             'Valid arguments are \'camera\' and \'lidar\'.')
     parser.add_argument('--dataset-dir', required=True, type=str,
                         help='Specify the dataset\'s root. All subdirectories containing images are found automatically'
                              'and videos are produced for each one. It is also possible to give just one directory'
@@ -24,10 +35,6 @@ if __name__ == '__main__':
                         help='This options scales the images up by 4 using the max-image-resultion.'
                              'It is available under https://github.com/IBM/MAX-Image-Resolution-Enhancer.'
                              'True|False are valid arguments.')
-    parser.add_argument('--extension', type=str, default='mp4',
-                        help='This option specifies the extension of the video, which is generated.'
-                             'Valid arguments are \'mp4\', \'avi\', \'mov\', or all extensions supported by ffmpeg.'
-                             'Default \'mp4\'.')
 
     args = parser.parse_args()
 
@@ -56,38 +63,85 @@ if __name__ == '__main__':
     ''' End Command Line Arguments Parser '''
 
     # Assign command line options to variables
+    sensor = args.sensor
     image_dirs = sub_dirs
     frame_rate = args.frame_rate
     rectify = args.rectify
     resize_factor = args.resize_factor
     upscale = args.upscale
     models_path = "./robotcar_dataset_sdk/models/"  # Path to models of sensors delivered with the oxford dataset
-    extension = args.extension
 
-    # # Delete and extract the sample to get intended starting conditions.
-    # # This part is just for development purposes and should be deleted later.
-    # os.system("rm -r dataset")
-    # os.system("mkdir dataset")
-    # os.system("tar -xvf sample_small.tar -C dataset")
-    # os.system("rm ./out/*.mp4")
 
-    if rectify:
-        print("Rectify images.")
+    ##############################################
+    ##                  Camera                  ##
+    ##############################################
+
+    if sensor == 'camera':
+
+        if rectify:
+            print("Rectify images.")
+            for image_dir in image_dirs:
+                im.rectify_images(image_dir, models_path)
+
+        if resize_factor != 1:
+            print("Resize images with factor {}.".format(resize_factor))
+            for image_dir in image_dirs:
+                im.resize_image(image_dir, factor=resize_factor)
+
+        if upscale:
+            print("Upscale images.")
+            for image_dir in image_dirs:
+                im.upscale_image(image_dir)
+
+        print("Convert images to video.")
         for image_dir in image_dirs:
-            im.rectify_images(image_dir, models_path)
+            VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext="mp4")
 
-    # im.interpolate_images("sample_small/mono_left/pic00.png", "sample_small/mono_left/pic01.png")
 
-    if resize_factor != 1:
-        print("Resize images with factor {}.".format(resize_factor))
-        for image_dir in image_dirs:
-            im.resize_image(image_dir, factor=resize_factor)
 
-    if upscale:
-        print("Upscale images.")
-        for image_dir in image_dirs:
-            im.upscale_image(image_dir)
+    ##############################################
+    ##                  LiDAR                   ##
+    ##############################################
 
-    print("Convert images to video.")
-    for image_dir in image_dirs:
-        VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext=extension)
+    if sensor == 'lidar':
+        packets = []
+
+        # Get and adjust the director of lidar pngs
+        velodyne_dir = args.dataset_dir
+        if velodyne_dir[-1] == '/':
+            velodyne_dir = velodyne_dir[:-1]
+
+        # Check that the directory structure is right
+        velodyne_sensor = os.path.basename(velodyne_dir)
+        if velodyne_sensor not in ["velodyne_left", "velodyne_right"]:
+            raise ValueError("Velodyne directory not valid: {}".format(velodyne_dir))
+
+        # Get path to timestamps file
+        timestamps_path = velodyne_dir + '.timestamps'
+        if not os.path.isfile(timestamps_path):
+            raise IOError("Could not find timestamps file: {}".format(timestamps_path))
+
+        # Load timestamps
+        velodyne_timestamps = np.loadtxt(timestamps_path, delimiter=' ', usecols=[0], dtype=np.int64)
+
+        # Iterate over timestamps
+        for velodyne_timestamp in tqdm(velodyne_timestamps):
+            filename = os.path.join(velodyne_dir, str(velodyne_timestamp) + '.png')
+
+            # Get raw packet content
+            ranges, intensities, angles, timestamp = load_velodyne_raw(filename)
+
+            # Calculate amount of packets that can be created from the loaded data
+            num_packets = timestamp.shape[1]
+            for i in range(num_packets):
+                pkt_ranges = ranges[:, i*12:i*12+12]
+                pkt_intensities = intensities[:, i*12:i*12+12]
+                pkt_angles = angles[:, i*12:i*12+12]
+                pkt_timestamp = timestamp[:, i]
+                payload = create_velodyne_payload(pkt_ranges, pkt_intensities, pkt_angles, pkt_timestamp)
+                packet = Ether()/IP()/UDP(dport=65535, sport=0)/payload
+                packets.append(packet)
+
+        wrpcap('out/velodyne_lidar.pcap', packets)
+
+        print('End.')
