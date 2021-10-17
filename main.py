@@ -144,6 +144,8 @@ if __name__ == '__main__':
                 packet = Ether()/IP()/UDP(dport=65535, sport=0)/payload
                 packets.append(packet)
 
+        if not os.path.exists('out'):
+            os.makedirs('out')
         out_path = 'out/{}.pcap'.format(velodyne_sensor)
         wrpcap(out_path, packets)
 
