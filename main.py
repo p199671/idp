@@ -144,6 +144,7 @@ if __name__ == '__main__':
                 packet = Ether()/IP()/UDP(dport=65535, sport=0)/payload
                 packets.append(packet)
 
-        wrpcap('out/velodyne_lidar.pcap', packets)
+        out_path = 'out/{}.pcap'.format(velodyne_sensor)
+        wrpcap(out_path, packets)
 
         print('End.')
