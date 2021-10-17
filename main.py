@@ -7,7 +7,7 @@ from src import VideoConverter as VC
 from src import ImagePreprocessing as im
 import argparse
 import subprocess
-from src.LiDAR import load_velodyne_raw, create_velodyne_payload
+from src import LiDAR as LI
 from scapy.layers.inet import Ether, IP, UDP
 from scapy.utils import wrpcap
 from tqdm import tqdm
@@ -129,7 +129,7 @@ if __name__ == '__main__':
             filename = os.path.join(velodyne_dir, str(velodyne_timestamp) + '.png')
 
             # Get raw packet content
-            ranges, intensities, angles, timestamp = load_velodyne_raw(filename)
+            ranges, intensities, angles, timestamp = LI.load_velodyne_raw(filename)
 
             # Calculate amount of packets that can be created from the loaded data
             num_packets = timestamp.shape[1]
@@ -138,7 +138,7 @@ if __name__ == '__main__':
                 pkt_intensities = intensities[:, i*12:i*12+12]
                 pkt_angles = angles[:, i*12:i*12+12]
                 pkt_timestamp = timestamp[:, i]
-                payload = create_velodyne_payload(pkt_ranges, pkt_intensities, pkt_angles, pkt_timestamp)
+                payload = LI.create_velodyne_payload(pkt_ranges, pkt_intensities, pkt_angles, pkt_timestamp)
                 packet = Ether()/IP()/UDP(dport=65535, sport=0)/payload
                 packets.append(packet)
 
