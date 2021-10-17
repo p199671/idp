@@ -1,5 +1,4 @@
 import os
-import sys
 
 import numpy as np
 
@@ -10,7 +9,6 @@ import subprocess
 from src import LiDAR as LI
 from scapy.layers.inet import Ether, IP, UDP
 from scapy.utils import wrpcap
-from tqdm import tqdm
 
 if __name__ == '__main__':
     ''' Start Command Line Arguments Parser '''
@@ -35,6 +33,9 @@ if __name__ == '__main__':
                         help='This options scales the images up by 4 using the max-image-resultion.'
                              'It is available under https://github.com/IBM/MAX-Image-Resolution-Enhancer.'
                              'True|False are valid arguments.')
+    parser.add_argument('--extension', type=str, default='mp4',
+                        help='This option defines the extension of the video produced out of the'
+                             'camera raw data. Valid extensions are mp4, avi and all supported by ffmpeg.')
 
     args = parser.parse_args()
 
@@ -69,6 +70,7 @@ if __name__ == '__main__':
     rectify = args.rectify
     resize_factor = args.resize_factor
     upscale = args.upscale
+    extension = args.extension
     models_path = "./robotcar_dataset_sdk/models/"  # Path to models of sensors delivered with the oxford dataset
 
 
@@ -95,7 +97,7 @@ if __name__ == '__main__':
 
         print("Convert images to video.")
         for image_dir in image_dirs:
-            VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext="mp4")
+            VC.convert_to_video(image_dir, frame_rate=frame_rate, video_ext=extension)
 
 
 
@@ -125,7 +127,7 @@ if __name__ == '__main__':
         velodyne_timestamps = np.loadtxt(timestamps_path, delimiter=' ', usecols=[0], dtype=np.int64)
 
         # Iterate over timestamps
-        for velodyne_timestamp in tqdm(velodyne_timestamps):
+        for velodyne_timestamp in velodyne_timestamps:
             filename = os.path.join(velodyne_dir, str(velodyne_timestamp) + '.png')
 
             # Get raw packet content
