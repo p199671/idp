@@ -71,6 +71,7 @@ if __name__ == '__main__':
     resize_factor = args.resize_factor
     upscale = args.upscale
     extension = args.extension
+    data_dir = "./dataset/data/"
     models_path = "./robotcar_dataset_sdk/models/"  # Path to models of sensors delivered with the oxford dataset
 
 
@@ -111,7 +112,8 @@ if __name__ == '__main__':
         position_packet_counter = 1
 
         # Get and adjust the director of lidar pngs
-        velodyne_dir = args.dataset_dir
+        # velodyne_dir = args.dataset_dir
+        velodyne_dir = data_dir + 'velodyne_left/'
         if velodyne_dir[-1] == '/':
             velodyne_dir = velodyne_dir[:-1]
 
@@ -154,6 +156,6 @@ if __name__ == '__main__':
             os.makedirs('out')
         out_path = 'out/{}.pcap'.format(velodyne_sensor)
         wrpcap(out_path, packets)
-        print('Saved to {}'.format(out_path))
+        print('Saved to {}.'.format(out_path))
 
         print('End.')
