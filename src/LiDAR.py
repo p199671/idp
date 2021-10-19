@@ -86,7 +86,7 @@ def convert_timestamp(timestamp):
 
 def build_packet(payload, eth_s="60:76:88:20:12:6e", eth_d="ff:ff:ff:ff:ff:ff", ip_s="192.168.1.201", ip_d="255.255.255.255", udp_s=2368, udp_d=2368):
     '''
-    Builds a packet based on input variables.
+    Builds a packet based on input variables. The standard values are take from captured velodyne data.
     :param payload: Is either data or position packet payload.
     :param ip_s: Source IP address
     :param ip_d: Destination IP address
@@ -96,3 +96,8 @@ def build_packet(payload, eth_s="60:76:88:20:12:6e", eth_d="ff:ff:ff:ff:ff:ff", 
     '''
     packet = Ether(src=eth_s, dst=eth_d)/IP(src=ip_s, dst=ip_d)/UDP(sport=udp_s, dport=udp_d)/payload
     return packet
+
+
+def set_pps(timestamps):
+    pps = (timestamps.item(-1) - timestamps.item(0))    # len(timestamps[0]) * 1000 /
+    os.system("pos_set_variable pps {}".format(pps))
