@@ -99,6 +99,6 @@ def build_packet(payload, eth_s="60:76:88:20:12:6e", eth_d="ff:ff:ff:ff:ff:ff", 
 
 
 def set_pps(timestamps):
-    pps = len(timestamps[0]) * 1000 / (timestamps.item(-1) - timestamps.item(0))
+    pps = len(timestamps[0]) * 1000000 / (timestamps.item(-1) - timestamps.item(0))
     # os.system("pos_set_variable pps {}".format(pps))
-    os.system("PPS={}".format(pps))
+    os.system("{} > pps".format(pps))
