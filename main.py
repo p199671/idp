@@ -16,10 +16,6 @@ if __name__ == '__main__':
     parser.add_argument('--sensor', required=True, type=str, choices=['camera', 'lidar'],
                         help='Specify the sensor, which should be emulated.'
                              'Valid arguments are \'camera\' and \'lidar\'.')
-    parser.add_argument('--dataset-dir', required=True, type=str,
-                        help='Specify the dataset\'s root. All subdirectories containing images are found automatically'
-                             'and videos are produced for each one. It is also possible to give just one directory'
-                             'containing images.')
     parser.add_argument('--frame-rate', type=int, default=25,
                         help='Specify the framerate (in fps) with which the video should be created out of the '
                              'images. If not given, the timestamps are used to calculate the framerate.')
@@ -55,17 +51,12 @@ if __name__ == '__main__':
     else:
         raise Exception("Wrong argument for option 'upscale'.")
 
-    # Resolve dataset directory to find subdirectories where images (*.pngs) reside
-    sub_dirs = subprocess.check_output("find {} -type f -name *.png | sed -r 's|/[^/]+$||' |sort |uniq".format(args.dataset_dir), shell=True).decode("utf-8").split("\n")[:-1]
-    for i, dirs in enumerate(sub_dirs):
-        if not dirs.endswith("/"):
-            sub_dirs[i] = dirs + "/"
+
 
     ''' End Command Line Arguments Parser '''
 
     # Assign command line options to variables
     sensor = args.sensor
-    image_dirs = sub_dirs
     frame_rate = args.frame_rate
     rectify = args.rectify
     resize_factor = args.resize_factor
@@ -78,6 +69,13 @@ if __name__ == '__main__':
     ##############################################
     ##                  Camera                  ##
     ##############################################
+
+    # Resolve dataset directory to find subdirectories where images (*.pngs) reside
+    sub_dirs = subprocess.check_output("find {} -type f -name *.png | sed -r 's|/[^/]+$||' |sort |uniq".format(data_dir), shell=True).decode("utf-8").split("\n")[:-1]
+    for i, dirs in enumerate(sub_dirs):
+        if not dirs.endswith("/"):
+            sub_dirs[i] = dirs + "/"
+    image_dirs = sub_dirs
 
     if sensor == 'camera':
 
@@ -110,6 +108,8 @@ if __name__ == '__main__':
         packets = []
         position_packet_payload = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xba\x0f\x47\x10\x20\x23\x17\x30\xf4\x0f\x56\x10\x1e\x23\xae\x3f\xc7\x0e\x6d\x10\xf1\x2f\xad\x3f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x94\xaa\xac\x17\x00\x00\x00\x00\x24\x47\x50\x52\x4d\x43\x2c\x32\x32\x30\x36\x33\x36\x2c\x41\x2c\x33\x37\x30\x37\x2e\x38\x33\x32\x33\x2c\x4e\x2c\x31\x32\x31\x33\x39\x2e\x32\x38\x36\x33\x2c\x57\x2c\x30\x30\x33\x2e\x32\x2c\x31\x34\x35\x2e\x37\x2c\x31\x31\x31\x32\x31\x32\x2c\x30\x31\x33\x2e\x38\x2c\x45\x2c\x44\x2a\x30\x44\x0d\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         position_packet_counter = 1
+        set_pps = False
+        pps_list = []
 
         # Get and adjust the director of lidar pngs
         # velodyne_dir = args.dataset_dir
@@ -137,6 +137,7 @@ if __name__ == '__main__':
             # Get raw packet content
             ranges, intensities, angles, timestamp = LI.load_velodyne_raw(filename)
 
+
             # Calculate amount of packets that can be created from the loaded data
             num_packets = timestamp.shape[1]
             for i in range(num_packets):
@@ -158,4 +159,6 @@ if __name__ == '__main__':
         wrpcap(out_path, packets)
         print('Saved to {}.'.format(out_path))
 
+        pps_mean = np.mean(pps_list)
+        print(pps_mean)
         print('End.')
