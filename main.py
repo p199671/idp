@@ -111,54 +111,61 @@ if __name__ == '__main__':
         set_pps = False
         pps_list = []
 
-        # Get and adjust the director of lidar pngs
-        # velodyne_dir = args.dataset_dir
-        velodyne_dir = data_dir + 'velodyne_left/'
-        if velodyne_dir[-1] == '/':
-            velodyne_dir = velodyne_dir[:-1]
-
-        # Check that the directory structure is right
-        velodyne_sensor = os.path.basename(velodyne_dir)
-        if velodyne_sensor not in ["velodyne_left", "velodyne_right"]:
-            raise ValueError("Velodyne directory not valid: {}".format(velodyne_dir))
-
-        # Get path to timestamps file
-        timestamps_path = velodyne_dir + '.timestamps'
-        if not os.path.isfile(timestamps_path):
-            raise IOError("Could not find timestamps file: {}".format(timestamps_path))
-
-        # Load timestamps
-        velodyne_timestamps = np.loadtxt(timestamps_path, delimiter=' ', usecols=[0], dtype=np.int64)
-
-        # Iterate over timestamps
-        for velodyne_timestamp in velodyne_timestamps:
-            filename = os.path.join(velodyne_dir, str(velodyne_timestamp) + '.png')
-
-            # Get raw packet content
-            ranges, intensities, angles, timestamp = LI.load_velodyne_raw(filename)
+        # Resolve dataset directory to find subdirectories where png's reside
+        lidar_dirs = subprocess.check_output(
+            "find {} -type f -name *.png | sed -r 's|/[^/]+$||' |sort |uniq".format(data_dir), shell=True).decode(
+            "utf-8").split("\n")[:-1]
+        for i, dirs in enumerate(sub_dirs):
+            if not dirs.endswith("/"):
+                sub_dirs[i] = dirs + "/"
 
 
-            # Calculate amount of packets that can be created from the loaded data
-            num_packets = timestamp.shape[1]
-            for i in range(num_packets):
-                pkt_ranges = ranges[:, i*12:i*12+12]
-                pkt_intensities = intensities[:, i*12:i*12+12]
-                pkt_angles = angles[:, i*12:i*12+12]
-                pkt_timestamp = timestamp[:, i]
-                payload = LI.create_velodyne_payload(pkt_ranges, pkt_intensities, pkt_angles, pkt_timestamp)
-                if position_packet_counter % 12 == 0:
-                    packet = LI.build_packet(position_packet_payload, udp_s=8308, udp_d=8308)
-                else:
-                    packet = LI.build_packet(payload)
-                position_packet_counter += 1
-                packets.append(packet)
+        timestamps_dirs = []
+        for dir in lidar_dirs:
+            timestamps_name = str(os.path.basename(os.path.normpath(dir))) + '.timestamps'
+            timestamps_path = subprocess.check_output(
+                "find {} -type f -name {}".format(
+                    data_dir, timestamps_name), shell=True).decode("utf-8").split("\n")[:-1]
+            if timestamps_path != []:
+                timestamps_dirs.append(timestamps_path[0])
+            else:
+                raise Exception("Timestamps file {} not found.".format(timestamps_name))
+
+        for i in range(len(lidar_dirs)):
+
+            # Check that the directory structure is right
+            sensor_pos = os.path.basename(lidar_dirs[i])
+
+            # Load timestamps
+            timestamps = np.loadtxt(timestamps_dirs[i], delimiter=' ', usecols=[0], dtype=np.int64)
+
+            # Iterate over timestamps
+            for l_timestamp in timestamps:
+                filename = os.path.join(lidar_dirs[0], str(l_timestamp) + '.png')
+
+                # Get raw packet content
+                ranges, intensities, angles, timestamp = LI.load_velodyne_raw(filename)
+
+
+                # Calculate amount of packets that can be created from the loaded data
+                num_packets = timestamp.shape[1]
+                for i in range(num_packets):
+                    pkt_ranges = ranges[:, i*12:i*12+12]
+                    pkt_intensities = intensities[:, i*12:i*12+12]
+                    pkt_angles = angles[:, i*12:i*12+12]
+                    pkt_timestamp = timestamp[:, i]
+                    payload = LI.create_velodyne_payload(pkt_ranges, pkt_intensities, pkt_angles, pkt_timestamp)
+                    if position_packet_counter % 12 == 0:
+                        packet = LI.build_packet(position_packet_payload, udp_s=8308, udp_d=8308)
+                    else:
+                        packet = LI.build_packet(payload)
+                    position_packet_counter += 1
+                    packets.append(packet)
 
         if not os.path.exists('out'):
             os.makedirs('out')
-        out_path = 'out/{}.pcap'.format(velodyne_sensor)
+        out_path = 'out/{}.pcap'.format(sensor_pos)
         wrpcap(out_path, packets)
         print('Saved to {}.'.format(out_path))
 
-        pps_mean = np.mean(pps_list)
-        print(pps_mean)
         print('End.')
