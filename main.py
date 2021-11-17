@@ -7,7 +7,6 @@ from src import ImagePreprocessing as im
 import argparse
 import subprocess
 from src import LiDAR as LI
-from scapy.layers.inet import Ether, IP, UDP
 from scapy.utils import wrpcap
 
 if __name__ == '__main__':
@@ -105,13 +104,13 @@ if __name__ == '__main__':
     ##############################################
 
     if sensor == 'lidar':
-        packets = []
+
         position_packet_payload = b"\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\xba\x0f\x47\x10\x20\x23\x17\x30\xf4\x0f\x56\x10\x1e\x23\xae\x3f\xc7\x0e\x6d\x10\xf1\x2f\xad\x3f\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x94\xaa\xac\x17\x00\x00\x00\x00\x24\x47\x50\x52\x4d\x43\x2c\x32\x32\x30\x36\x33\x36\x2c\x41\x2c\x33\x37\x30\x37\x2e\x38\x33\x32\x33\x2c\x4e\x2c\x31\x32\x31\x33\x39\x2e\x32\x38\x36\x33\x2c\x57\x2c\x30\x30\x33\x2e\x32\x2c\x31\x34\x35\x2e\x37\x2c\x31\x31\x31\x32\x31\x32\x2c\x30\x31\x33\x2e\x38\x2c\x45\x2c\x44\x2a\x30\x44\x0d\x0a\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
         position_packet_counter = 1
         set_pps = False
         pps_list = []
 
-        # Resolve dataset directory to find subdirectories where png's reside
+        # Resolve dataset directory to find subdirectories where png's reside.
         lidar_dirs = subprocess.check_output(
             "find {} -type f -name *.png | sed -r 's|/[^/]+$||' |sort |uniq".format(data_dir), shell=True).decode(
             "utf-8").split("\n")[:-1]
@@ -119,7 +118,7 @@ if __name__ == '__main__':
             if not dirs.endswith("/"):
                 sub_dirs[i] = dirs + "/"
 
-
+        # Find correspondent timestamps-files to directories where lidar-pngs reside.
         timestamps_dirs = []
         for dir in lidar_dirs:
             timestamps_name = str(os.path.basename(os.path.normpath(dir))) + '.timestamps'
@@ -131,9 +130,12 @@ if __name__ == '__main__':
             else:
                 raise Exception("Timestamps file {} not found.".format(timestamps_name))
 
+        # Iterate over found lidar directories and process the data to Velodyne HDL-32E packets.
         for i in range(len(lidar_dirs)):
 
-            # Check that the directory structure is right
+            packets = []    # Variable to store all packets created out of one directory
+
+            # Get name of directory to store pcaps later with this name
             sensor_pos = os.path.basename(lidar_dirs[i])
 
             # Load timestamps
@@ -146,26 +148,31 @@ if __name__ == '__main__':
                 # Get raw packet content
                 ranges, intensities, angles, timestamp = LI.load_velodyne_raw(filename)
 
-
                 # Calculate amount of packets that can be created from the loaded data
                 num_packets = timestamp.shape[1]
+
+                # Build packets
                 for i in range(num_packets):
-                    pkt_ranges = ranges[:, i*12:i*12+12]
-                    pkt_intensities = intensities[:, i*12:i*12+12]
-                    pkt_angles = angles[:, i*12:i*12+12]
+                    # The ratio of data to position packets is 14:1, so every 15th packet is a position packet.
+                    if position_packet_counter % 15 == 0:
+                        position_packet = LI.build_packet(position_packet_payload, udp_s=8308, udp_d=8308)
+                        packets.append(position_packet)
+
+                    # Creation of data packet
+                    pkt_ranges = ranges[:, i * 12:i * 12 + 12]
+                    pkt_intensities = intensities[:, i * 12:i * 12 + 12]
+                    pkt_angles = angles[:, i * 12:i * 12 + 12]
                     pkt_timestamp = timestamp[:, i]
                     payload = LI.create_velodyne_payload(pkt_ranges, pkt_intensities, pkt_angles, pkt_timestamp)
-                    if position_packet_counter % 12 == 0:
-                        packet = LI.build_packet(position_packet_payload, udp_s=8308, udp_d=8308)
-                    else:
-                        packet = LI.build_packet(payload)
+                    packet = LI.build_packet(payload)
                     position_packet_counter += 1
                     packets.append(packet)
 
-        if not os.path.exists('out'):
-            os.makedirs('out')
-        out_path = 'out/{}.pcap'.format(sensor_pos)
-        wrpcap(out_path, packets)
-        print('Saved to {}.'.format(out_path))
+            # Store all created packets of a directory to out/ directory.
+            if not os.path.exists('out'):
+                os.makedirs('out')
+            out_path = 'out/{}.pcap'.format(sensor_pos)
+            wrpcap(out_path, packets)
+            print('Saved to {}.'.format(out_path))
 
         print('End.')
