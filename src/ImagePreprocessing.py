@@ -87,7 +87,7 @@ def upscale_image(image_path):
     
     print("Modify docker image.")
     subprocess.call(
-        "sed -i '19s#.*#ARG model_bucket=s3.us.cloud-object-storage.appdomain.cloud/codait-cos-max/max-image-resolution-enhancer/1.0.0#' MAX-Image-Resolution-Enhancer/Dockerfile",
+        "sed -i '19s#.*#ARG model_bucket=s3.us.cloud-object-storage.appdomain.cloud/codait-cos-max/max-image-resolution-enhancer/1.0.0#' max-image-resolution-enhancer/Dockerfile",
         shell=True)
         
     print("Build docker image.")
