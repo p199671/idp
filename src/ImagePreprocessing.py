@@ -84,7 +84,12 @@ def upscale_image(image_path):
 
     print("Clone repository.")
     os.system("git clone https://github.com/IBM/max-image-resolution-enhancer.git")
-
+    
+    print("Modify docker image.")
+    subprocess.call(
+        "sed -i '19s#.*#ARG model_bucket=s3.us.cloud-object-storage.appdomain.cloud/codait-cos-max/max-image-resolution-enhancer/1.0.0#' MAX-Image-Resolution-Enhancer/Dockerfile",
+        shell=True)
+        
     print("Build docker image.")
     subprocess.call(
         "docker build -t max-image-resolution-enhancer max-image-resolution-enhancer/",
