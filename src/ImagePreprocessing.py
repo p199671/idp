@@ -82,33 +82,9 @@ def upscale_image(image_path):
     :param image_path: Path to the directory where the images reside.
     """
 
-    print("Clone repository.")
-    os.system("git clone https://github.com/IBM/max-image-resolution-enhancer.git")
-    
-    print("Modify docker image.")
-    subprocess.call(
-        "sed -i '19s#.*#ARG model_bucket=s3.us.cloud-object-storage.appdomain.cloud/codait-cos-max/max-image-resolution-enhancer/1.0.0#' max-image-resolution-enhancer/Dockerfile",
-        shell=True)
-        
-    print("Build docker image.")
-    subprocess.call(
-        "docker build -t max-image-resolution-enhancer max-image-resolution-enhancer/",
-        shell=True)
-
-    print("Run docker image.")
-    subprocess.Popen("docker run -p 5000:5000 max-image-resolution-enhancer", shell=True,
-                     stdin=None, stdout=None, stderr=None,
-                     close_fds=True)  # The docker daemon must run for this command
-    time.sleep(25)  # Wait till docker image is up and running.
-    print("Container is running.")
-
     # Perform image upscaling
     image_list = [x for x in os.listdir(image_path) if not x.startswith('.')]
     for image_name in image_list:
         subprocess.call("curl -X POST \"http://localhost:5000/model/predict\" -H  \"accept: application/json\" -H  "
                         "\"Content-Type: multipart/form-data\" -F \"image=@{};type=image/png\" --output {}".format(
             image_path + image_name, image_path + image_name), shell=True)
-
-    print("Terminate docker container.")
-    subprocess.Popen("docker stop $(docker ps | grep max-image-resolution-enhancer | awk '{print $1}')",
-                     shell=True)
